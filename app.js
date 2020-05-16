@@ -13,8 +13,43 @@ async function getRecentMatches() {
 let radiantWards = [];
 let direWards = [];
 
+async function getWards() {
 
-getRecentMatches()
+    const jsonMatches = await getRecentMatches();
+    const elaborateMatches = await getElaborateMatches(jsonMatches);
+    
+
+    //console.log(jsonMatches);
+
+
+}
+
+function getElaborateMatches(json) {
+
+    const matchPromises = json.map((match) => {
+        getElaborateMatch(match.match_id);
+    })
+
+    return Promise.all(matchPromises);
+}
+
+function getElaborateMatch(id) {
+    return new Promise(resolve => {
+        fetch(`https://api.opendota.com/api/matches/${id}?api_key=${credentials.API_KEY}`)
+            .then( res => {
+                res.json()
+                    .then( json => {
+                        resolve (json);
+                    })
+            })
+    })
+}
+
+
+
+getWards();
+
+/* getRecentMatches()
     .then( matches => {
         matchids = [];
         matches.forEach(element => {
@@ -37,7 +72,6 @@ getRecentMatches()
                     res.json()
                         .then( data => {
                             data.players.map( player => {
-                            
                                 player.obs_log.forEach(element => {
                                     if(player.isRadiant){
                                         radiantWards.push(element);
@@ -53,7 +87,7 @@ getRecentMatches()
             
      
     })
-    
+     */
 
 /* 
 function getElaborateMatches(matchIds) {
