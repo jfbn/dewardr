@@ -10,10 +10,9 @@ async function getRecentMatches() {
     return await res.json();
 }
 
-async function getMatches(matchIds) {
-    const res = await fetch(`https://api.opendota.com/api/players/${config.steam_id_32}/matches?api_key=${credentials.API_KEY}&limit=${config.amount_of_matches}`);
-    return await res.json();
-}
+let radiantWards = [];
+let direWards = [];
+
 
 getRecentMatches()
     .then( matches => {
@@ -26,26 +25,36 @@ getRecentMatches()
         })
     })
     .then( ids => {
-        console.log(ids);
-        return new Promise( async (resolve, reject) => {
-            let matches = [];
-    
-            ids.forEach(element => {
-    
-                fetch(`https://api.opendota.com/api/matches/${element}?api_key=${credentials.API_KEY}`)
-                    .then( res => {
-                        res.json()
-                            .then( json => {
-                                matches.push(json);
+
+        matchPromises = [];
+        ids.forEach(element => {
+            matchPromises.push(fetch(`https://api.opendota.com/api/matches/${element}?api_key=${credentials.API_KEY}`))
+        });
+
+        Promise.all(matchPromises)
+            .then( responses => {
+                return responses.map( (res) => {
+                    res.json()
+                        .then( data => {
+                            data.players.map( player => {
+                            
+                                player.obs_log.forEach(element => {
+                                    if(player.isRadiant){
+                                        radiantWards.push(element);
+                                    } else {
+                                        direWards.push(element);
+                                    }
+                                });
                             })
-                    })
-            });
-            resolve(matches);
-        })
+                        })
+                });
+            })
+            
+            
+     
     })
-    .then( matches => {
-        console.log(matches);
-    })
+    
+
 /* 
 function getElaborateMatches(matchIds) {
 
