@@ -1,0 +1,22 @@
+{
+  "name": "dewardr",
+  "version": "0.0.1",
+  "description": "A webapp to help you figure out where your Dota2 opponents are more likely to put their wards",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jfbn/dewardr.git"
+  },
+  "author": "jfbn",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jfbn/dewardr/issues"
+  },
+  "homepage": "https://github.com/jfbn/dewardr#readme",
+  "dependencies": {
+    "canvas": "^2.6.1"
+  }
+}
