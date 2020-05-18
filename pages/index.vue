@@ -1,24 +1,25 @@
 <template>
-  <div class="container">
-
-    <b-container class="bv-example-row">
-      <b-row>
-        <b-col>
-          <InputForm @buttonClicked="handleSteamIdSubmit"></InputForm>
-          <Slider @sliderChanged="updateWards"></Slider>
-          <b-row>
-            <b-col><TeamCheckBox @teamChanged="updateTeams" :team="'Radiant'"></TeamCheckBox></b-col>
-            <b-col><TeamCheckBox @teamChanged="updateTeams" :team="'Dire'"></TeamCheckBox></b-col>
-          </b-row>
-        </b-col>
-        <b-col> 
-          <div class="heatmapjs-container">
-            <div id="heatmap" class="heatmapjs-canvas" />
-          </div>
-        </b-col>
-      </b-row>
-    </b-container>
-  </div>
+  <b-container>
+    <h4>Input steam32 id:</h4>
+    <InputForm @buttonClicked="handleSteamIdSubmit"></InputForm>
+    <hr>
+    <b-row v-if="matches.length">
+      <b-col>
+        <b-row>
+          <b-col><Slider @sliderChanged="updateWards"></Slider></b-col>
+        </b-row>
+        <b-row>
+          <b-col><TeamCheckBox @teamChanged="updateTeams" :team="'Radiant'"></TeamCheckBox></b-col>
+          <b-col><TeamCheckBox @teamChanged="updateTeams" :team="'Dire'"></TeamCheckBox></b-col>
+        </b-row>
+      </b-col>
+      <b-col> 
+        <div class="heatmapjs-container">
+          <div id="heatmap" class="heatmapjs-canvas" />
+        </div>
+      </b-col>
+    </b-row>
+  </b-container>
 </template>
  
 <script>
@@ -168,14 +169,7 @@ export default {
     transform: translateX(180deg)
   }
 
-.container {
-  margin: 0 auto;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
+
 
 .title {
   font-family: 'Quicksand', 'Source Sans Pro', -apple-system, BlinkMacSystemFont,

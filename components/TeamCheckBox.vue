@@ -1,7 +1,7 @@
 <template>
   <div>
     <b-form-checkbox
-      id="checkbox-1"
+      :id="'checkbox-'+team"
       v-model="status"
       name="checkbox-1"
       value="accepted"
