@@ -1,5 +1,5 @@
 <template>
-    <b-form-input @change="$emit('fieldChanged', text)" v-model="text" placeholder="Enter Steam32 id here"></b-form-input>
+  <b-form-input @change="$emit('fieldChanged', text)" v-model="text" placeholder="Enter Steam32 id here"></b-form-input>
 </template>
 
 <script>

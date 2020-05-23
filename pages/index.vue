@@ -1,28 +1,46 @@
 <template>
   <b-container>
-    <h4>Input steam32 id:</h4>
-    <InputForm @buttonClicked="handleSteamIdSubmit"></InputForm>
-    <hr>
-    <b-row v-if="matches.length">
+
+    <b-row>
       <b-col>
+        <h4>Input steam32 id:</h4>
+        <InputForm @buttonClicked="handleSteamIdSubmit"></InputForm>
+      </b-col>
+      <b-col>
+        <DisplayInfo :matches="this.matches" :shownWards="wards_shown" :time="time"></DisplayInfo>
+      </b-col>
+    </b-row>
+
+    <hr>
+
+    <b-row v-if="matches.length">
+      
+      <b-col>
+
         <b-row>
           <b-col><Slider @sliderChanged="updateWards"></Slider></b-col>
         </b-row>
+
         <b-row>
           <b-col><TeamCheckBox @teamChanged="updateTeams" :team="'Radiant'"></TeamCheckBox></b-col>
           <b-col><TeamCheckBox @teamChanged="updateTeams" :team="'Dire'"></TeamCheckBox></b-col>
         </b-row>
+
       </b-col>
-      <b-col> 
-        <div class="heatmapjs-container">
+
+      <b-col > 
+        <div v-if="show_dire == true || show_radiant == true"  class="heatmapjs-container">
           <div id="heatmap" class="heatmapjs-canvas" />
         </div>
       </b-col>
+
     </b-row>
+
   </b-container>
 </template>
  
 <script>
+import DisplayInfo from '../components/DisplayInfo';
 import InputForm from '../components/InputForm';
 import TeamCheckBox from '../components/TeamCheckBox';
 import Slider from '../components/Slider';
@@ -34,14 +52,15 @@ export default {
   components: {
     InputForm,
     Slider,
-    TeamCheckBox
+    TeamCheckBox,
+    DisplayInfo
   },
   data() {
     return {
       matches: [],
       elaborateMatches: [],
       wards: [],
-      time: 5,
+      time: 5 * 60,
       heatmap: null,
       show_radiant: true,
       show_dire: true,
@@ -58,18 +77,23 @@ export default {
       return this.wards.filter(ward  => ward.isRadiant)
     },
     wards_shown() {
-      if(this.show_radiant && this.show_dire) {
-        return this.wards.filter(ward => ward.time < this.time)      
-      }
-      if(this.show_radiant == true) {
-        return this.wards.filter(ward => ward.time < this.time && ward.isRadiant == true)      
-      }
-      if(this.show_dire == true) {
-        return this.wards.filter(ward => ward.time < this.time && ward.isRadiant == false)      
-      }
+      let wards = this.filterWardsOnTime(this.wards);
+      return this.filterWardsonTeams(wards);
     }
   },
   methods: {
+    filterWardsOnTime(wards) {
+      return this.wards.filter(ward => this.time-360 < ward.time && ward.time < this.time)
+    },
+    filterWardsonTeams(wards) {
+      if(this.show_radiant && this.show_dire) {
+        return wards;
+      } else if (this.show_radiant) {
+        return wards.filter(ward => ward.isRadiant == true);
+      } else {
+        return wards.filter(ward => ward.isRadiant == false);
+      }
+    },
     updateTeams(team) {
       if(team == 'Radiant') {
         this.show_radiant = !this.show_radiant;
@@ -95,7 +119,7 @@ export default {
         width: 500,
         height: 500,
       });
-      const adjustedData = this.scaleAndExtrema(this.wards_shown, 500 / 127, 20);
+      const adjustedData = this.scaleAndExtrema(this.wards_shown, 500 / 127, 50);
       this.heatmap.setData(adjustedData);
     },
     sortWards() {
@@ -103,13 +127,49 @@ export default {
     extractWards() {
       const wards = [];
       this.elaborateMatches.forEach(match => {
+
+        const towerTimings = this.getTowerDeaths(match);
+
         match.players.forEach(player => {
           if(player.obs_log){
-            wards.push(...player.obs_log.map(obs => ({x: obs.x, y: obs.y, time: obs.time, isRadiant: player.isRadiant})));
+
+            player.obs_log.forEach(ward => {
+
+              
+
+              const aliveTowers = this.getAliveTowersAtTime(ward, towerTimings)
+              wards.push({x: ward.x, y: ward.y, time: ward.time, isRadiant: player.isRadiant, aliveTowers: aliveTowers})
+            })
+
+            //wards.push(...player.obs_log.map(obs => ({x: obs.x, y: obs.y, time: obs.time, isRadiant: player.isRadiant, aliveTowers: towerTimings.map(objective => objective.time < obs.time)})));
           }
         })
       })
       this.wards = wards;
+    },
+    getAliveTowersAtTime(w, timings) {
+
+      console.log(timings);
+      let aliveTowers = [];
+
+      // give me a list of objective events that occured AFTER the provided ward is placed (towers that are the key of these objectives are alive if the event.time is greater than wards time)
+      const acceptedObjectives = timings.filter(objective => objective.time > w.time)
+      acceptedObjectives.forEach(objective => {
+        aliveTowers.push(objective.building);
+      })
+
+      return aliveTowers;
+    },
+    getTowerDeaths(match) {
+      let towerkills = [];
+      match.objectives.forEach(objective => {
+        if(objective.key){
+          if(objective.key.toString().includes("tower")){
+            towerkills.push({"building": objective.key.toString().substring(9), "time":objective.time});
+          }
+        }
+      })
+      return towerkills;
     },
     scaleAndExtrema(points, scalef, max) {
       const newPoints = points.map(p => {
@@ -169,7 +229,9 @@ export default {
     transform: translateX(180deg)
   }
 
-
+.container {
+  margin-top: 20px;
+}
 
 .title {
   font-family: 'Quicksand', 'Source Sans Pro', -apple-system, BlinkMacSystemFont,

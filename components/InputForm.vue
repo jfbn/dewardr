@@ -1,7 +1,7 @@
 <template>
   <div>
     <b-row>
-        <b-col cols="4">
+        <b-col cols="8">
             <Input @fieldChanged="updateText"/>
         </b-col>
         <b-col>
