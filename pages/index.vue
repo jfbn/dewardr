@@ -64,6 +64,28 @@ export default {
       heatmap: null,
       show_radiant: true,
       show_dire: true,
+      alive_towers: {
+          "badguys_tower1_bot" : true,
+          "badguys_tower1_top" : true,
+          "badguys_tower1_mid" : true,
+          "badguys_tower2_bot" : true,
+          "badguys_tower2_top" : true,
+          "badguys_tower2_mid" : true,
+          "badguys_tower3_bot" : true,
+          "badguys_tower3_top" : true,
+          "badguys_tower3_mid" : true, 
+  
+          "goodguys_tower1_bot" : true,
+          "goodguys_tower1_top" : true,
+          "goodguys_tower1_mid" : true,
+          "goodguys_tower2_bot" : true,
+          "goodguys_tower2_top" : true,
+          "goodguys_tower2_mid" : true,
+          "goodguys_tower3_bot" : true,
+          "goodguys_tower3_top" : true,
+          "goodguys_tower3_mid" : true
+        },
+      dead_towers: [],
     }
   },
   computed: {
@@ -78,14 +100,15 @@ export default {
     },
     wards_shown() {
       let wards = this.filterWardsOnTime(this.wards);
-      return this.filterWardsonTeams(wards);
+      wards = this.filterWardsOnTeams(wards);
+      return this.filterWardsOnTowers(wards);
     }
   },
   methods: {
     filterWardsOnTime(wards) {
       return this.wards.filter(ward => this.time-360 < ward.time && ward.time < this.time)
     },
-    filterWardsonTeams(wards) {
+    filterWardsOnTeams(wards) {
       if(this.show_radiant && this.show_dire) {
         return wards;
       } else if (this.show_radiant) {
@@ -93,6 +116,29 @@ export default {
       } else {
         return wards.filter(ward => ward.isRadiant == false);
       }
+    },
+    filterWardsOnTowers(wards) {
+
+      if(this.dead_towers.length == 0) {
+        return wards;
+      }
+      let filtered = [];
+
+      // iterate over list of dead towers as selected by the user
+      this.dead_towers.forEach(tower => {
+        console.log(tower);
+
+        // for each dead tower, check each ward we are given
+        wards.forEach(ward => {
+
+          // if the wards deadTowers array includes the tower, we know this ward was placed when the tower was dead
+          if(ward.deadTowers.includes(tower)){
+            filtered.push(ward);
+          }
+        })
+      })
+
+      return filtered;
     },
     updateTeams(team) {
       if(team == 'Radiant') {
@@ -126,8 +172,33 @@ export default {
     },
     extractWards() {
       const wards = [];
-      this.elaborateMatches.forEach(match => {
 
+      // used to keep track of which towers are alive, true = alive
+
+      this.elaborateMatches.forEach(match => {
+        
+        const towerStatus = {
+          "badguys_tower1_bot" : true,
+          "badguys_tower1_top" : true,
+          "badguys_tower1_mid" : true,
+          "badguys_tower2_bot" : true,
+          "badguys_tower2_top" : true,
+          "badguys_tower2_mid" : true,
+          "badguys_tower3_bot" : true,
+          "badguys_tower3_top" : true,
+          "badguys_tower3_mid" : true, 
+  
+          "goodguys_tower1_bot" : true,
+          "goodguys_tower1_top" : true,
+          "goodguys_tower1_mid" : true,
+          "goodguys_tower2_bot" : true,
+          "goodguys_tower2_top" : true,
+          "goodguys_tower2_mid" : true,
+          "goodguys_tower3_bot" : true,
+          "goodguys_tower3_top" : true,
+          "goodguys_tower3_mid" : true
+        };
+        
         const towerTimings = this.getTowerDeaths(match);
 
         match.players.forEach(player => {
@@ -135,26 +206,21 @@ export default {
 
             player.obs_log.forEach(ward => {
 
-              
-
-              const aliveTowers = this.getAliveTowersAtTime(ward, towerTimings)
-              wards.push({x: ward.x, y: ward.y, time: ward.time, isRadiant: player.isRadiant, aliveTowers: aliveTowers})
+              const deadTowers = this.getDeadTowersAtTime(ward, towerTimings)
+              wards.push({x: ward.x, y: ward.y, time: ward.time, isRadiant: player.isRadiant, deadTowers: deadTowers})
             })
-
-            //wards.push(...player.obs_log.map(obs => ({x: obs.x, y: obs.y, time: obs.time, isRadiant: player.isRadiant, aliveTowers: towerTimings.map(objective => objective.time < obs.time)})));
           }
         })
       })
       this.wards = wards;
     },
-    getAliveTowersAtTime(w, timings) {
+    getDeadTowersAtTime(w, timings) {
 
-      console.log(timings);
       let aliveTowers = [];
 
-      // give me a list of objective events that occured AFTER the provided ward is placed (towers that are the key of these objectives are alive if the event.time is greater than wards time)
-      const acceptedObjectives = timings.filter(objective => objective.time > w.time)
-      acceptedObjectives.forEach(objective => {
+      // give me a list of objective events that occured AFTER the provided ward is placed (towers that are the key of these objectives are alive if the event.time is less than wards time)
+      const objectivesBeforeTime = timings.filter(objective => objective.time < w.time)
+      objectivesBeforeTime.forEach(objective => {
         aliveTowers.push(objective.building);
       })
 
@@ -162,13 +228,15 @@ export default {
     },
     getTowerDeaths(match) {
       let towerkills = [];
-      match.objectives.forEach(objective => {
-        if(objective.key){
-          if(objective.key.toString().includes("tower")){
-            towerkills.push({"building": objective.key.toString().substring(9), "time":objective.time});
+      if(match.objectives != undefined) {
+        match.objectives.forEach(objective => {
+          if(objective.key){
+            if(objective.key.toString().includes("tower")){
+              towerkills.push({"building": objective.key.toString().substring(9), "time":objective.time});
+            }
           }
-        }
-      })
+        })
+      }
       return towerkills;
     },
     scaleAndExtrema(points, scalef, max) {
