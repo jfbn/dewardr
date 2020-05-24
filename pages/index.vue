@@ -29,8 +29,8 @@
       </b-col>
 
       <b-col > 
-        <div v-if="show_dire == true || show_radiant == true"  class="heatmapjs-container">
-          <div id="heatmap" class="heatmapjs-canvas" />
+        <div v-show="show_dire == true || show_radiant == true"  class="heatmapjs-container">
+          <div id="heatmap" ref="heatmap" class="heatmapjs-canvas"/>
         </div>
       </b-col>
 
@@ -138,7 +138,10 @@ export default {
         })
       })
 
-      return filtered;
+      return filtered;  
+    },
+    drawTowers() {
+      console.log(this.heatmap);
     },
     updateTeams(team) {
       if(team == 'Radiant') {
@@ -154,9 +157,10 @@ export default {
     },
     updateHeatMap() {
       if(this.show_radiant || this.show_dire){
-        const adjustedData = this.scaleAndExtrema(this.wards_shown, 500 / 127, 20);
+        const adjustedData = this.scaleAndExtrema(this.wards_shown, 500 / 127, 50);
         this.heatmap.setData(adjustedData);
       }
+      this.drawTowers();
     },
     generateHeatmap() {
       this.heatmap = h337.create({
@@ -244,7 +248,7 @@ export default {
         return {
           x: Math.floor(p.x * scalef) - 250,
           y: 500 - (Math.floor(p.y * scalef) - 250),
-          value: 12,
+          value: 15,
         };
       });
       const vals = newPoints.map(p => p.value);
