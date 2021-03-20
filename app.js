@@ -39,6 +39,7 @@ getRecentMatches()
                             data.players.map( player => {
                             
                                 player.obs_log.forEach(element => {
+                                    console.log(element);
                                     if(player.isRadiant){
                                         radiantWards.push(element);
                                     } else {
